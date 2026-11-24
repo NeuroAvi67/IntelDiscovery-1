@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "DiscoveryRecord": {
+      "title": "DiscoveryRecord",
+      "description": "Structured intelligence discovery brief saved by a user, separating verified facts, interpretations, and AI suggestions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "query": { "type": "string", "description": "Investigated topic or query string" },
+        "category": {
+          "type": "string",
+          "enum": ["Technology", "Science", "Economics", "Security", "Design", "General"],
+          "description": "Topic domain category"
+        },
+        "summary": { "type": "string", "description": "Executive synthesis summary" },
+        "verifiedFacts": { "type": "array", "description": "Established, verifiable facts" },
+        "interpretations": { "type": "array", "description": "Reasoned analytical interpretations" },
+        "aiSuggestions": { "type": "array", "description": "Exploratory AI suggestions and next research angles" },
+        "sourceNotes": { "type": "array", "description": "Knowledge basis and attribution caveats" },
+        "pinned": { "type": "boolean", "description": "Whether discovery is pinned to dashboard" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation (FieldValue.serverTimestamp())" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update (FieldValue.serverTimestamp())" }
+      },
+      "required": [
+        "userId",
+        "query",
+        "category",
+        "summary",
+        "verifiedFacts",
+        "interpretations",
+        "aiSuggestions",
+        "sourceNotes",
+        "pinned",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SearchHistoryItem": {
+      "title": "SearchHistoryItem",
+      "description": "Log of discovery queries executed by the user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "query": { "type": "string", "description": "Search query string" },
+        "category": {
+          "type": "string",
+          "enum": ["All", "Technology", "Science", "Economics", "Security", "Design", "General"],
+          "description": "Filter category used"
+        },
+        "resultCount": { "type": "integer", "description": "Total structured insight items returned" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation (FieldValue.serverTimestamp())" }
+      },
+      "required": ["userId", "query", "category", "resultCount", "createdAt"]
+    },
+    "AssistantMessage": {
+      "title": "AssistantMessage",
+      "description": "Conversational turn in the user's AI Assistant history.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID" },
+        "role": { "type": "string", "enum": ["user", "assistant"], "description": "Message speaker role" },
+        "content": { "type": "string", "description": "Message text content" },
+        "modelName": { "type": "string", "description": "Gemini model identifier used" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation (FieldValue.serverTimestamp())" }
+      },
+      "required": ["userId", "role", "content", "modelName", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/discoveries/{discoveryId}": {
+      "schema": { "$ref": "#/entities/DiscoveryRecord" },
+      "description": "User's saved intelligence discoveries"
+    },
+    "/users/{userId}/searches/{searchId}": {
+      "schema": { "$ref": "#/entities/SearchHistoryItem" },
+      "description": "User's search history log"
+    },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/AssistantMessage" },
+      "description": "User's AI Assistant conversation history"
+    }
+  }
+}

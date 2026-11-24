@@ -1,0 +1,6 @@
+{
+  "name": "IntelDiscovery",
+  "description": "AI-powered intelligence and discovery platform for exploring topics, structured insights, and interactive research.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

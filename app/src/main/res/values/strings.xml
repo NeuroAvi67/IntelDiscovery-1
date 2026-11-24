@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">IntelDiscovery</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_dashboard">Workspace</string>
+    <string name="nav_discovery">Discover</string>
+    <string name="nav_assistant">Assistant</string>
+    <string name="nav_settings">Settings</string>
+    <string name="auth_sign_in_google">Sign in with Google</string>
+</resources>

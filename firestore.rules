@@ -1,0 +1,106 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isBoundedStringList(arr, maxLen) {
+      return arr is list &&
+             arr.size() <= maxLen &&
+             (arr.size() == 0 || (arr[0] is string && arr[0].size() <= 600));
+    }
+
+    function isValidDiscovery(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.query is string && data.query.size() >= 1 && data.query.size() <= 200 &&
+             data.category is string && data.category in ['Technology', 'Science', 'Economics', 'Security', 'Design', 'General'] &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 4000 &&
+             isBoundedStringList(data.verifiedFacts, 10) &&
+             isBoundedStringList(data.interpretations, 10) &&
+             isBoundedStringList(data.aiSuggestions, 10) &&
+             isBoundedStringList(data.sourceNotes, 10) &&
+             data.pinned is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidSearch(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.query is string && data.query.size() >= 1 && data.query.size() <= 200 &&
+             data.category is string && data.category in ['All', 'Technology', 'Science', 'Economics', 'Security', 'Design', 'General'] &&
+             data.resultCount is int && data.resultCount >= 0 && data.resultCount <= 100 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidMessage(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.role is string && data.role in ['user', 'assistant'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 16000 &&
+             data.modelName is string && data.modelName.size() >= 1 && data.modelName.size() <= 80 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    match /users/{userId}/discoveries/{discoveryId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(discoveryId);
+      allow create: if isOwner(userId) &&
+                       isValidId(discoveryId) &&
+                       incoming().userId == userId &&
+                       incoming().keys().hasAll(['userId', 'query', 'category', 'summary', 'verifiedFacts', 'interpretations', 'aiSuggestions', 'sourceNotes', 'pinned', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'query', 'category', 'summary', 'verifiedFacts', 'interpretations', 'aiSuggestions', 'sourceNotes', 'pinned', 'createdAt', 'updatedAt']) &&
+                       isValidDiscovery(incoming());
+      allow update: if isOwner(userId) &&
+                       isValidId(discoveryId) &&
+                       isValidDiscovery(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['pinned', 'updatedAt']);
+    }
+
+    match /users/{userId}/searches/{searchId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(searchId);
+      allow create: if isOwner(userId) &&
+                       isValidId(searchId) &&
+                       incoming().userId == userId &&
+                       incoming().keys().hasAll(['userId', 'query', 'category', 'resultCount', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'query', 'category', 'resultCount', 'createdAt']) &&
+                       isValidSearch(incoming());
+      allow update: if false;
+    }
+
+    match /users/{userId}/messages/{messageId} {
+      allow list: if isOwner(userId);
+      allow get, delete: if isOwner(userId) && isValidId(messageId);
+      allow create: if isOwner(userId) &&
+                       isValidId(messageId) &&
+                       incoming().userId == userId &&
+                       incoming().keys().hasAll(['userId', 'role', 'content', 'modelName', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'role', 'content', 'modelName', 'createdAt']) &&
+                       isValidMessage(incoming());
+      allow update: if false;
+    }
+  }
+}
